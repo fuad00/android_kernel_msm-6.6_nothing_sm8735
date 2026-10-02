@@ -193,6 +193,21 @@ static ssize_t fts_gesture_bm_store(
     return count;
 }
 
+static ssize_t fts_gesture_single_tap_pressed_show(
+    struct device *dev, struct device_attribute *attr, char *buf)
+{
+    int single_tap_pressed = 0;
+    struct fts_ts_data *ts_data = dev_get_drvdata(dev);
+
+    mutex_lock(&ts_data->input_dev->mutex);
+    if (ts_data->gesture_support) {
+        single_tap_pressed = ts_data->single_tap_pressed;
+    }
+    mutex_unlock(&ts_data->input_dev->mutex);
+
+    return snprintf(buf, PAGE_SIZE, "%u\n", single_tap_pressed);
+}
+
 /* sysfs gesture node
  *   read example: cat  fts_gesture_mode       ---read gesture mode
  *   write example:echo 1 > fts_gesture_mode   --- write gesture mode to 1
@@ -209,10 +224,14 @@ static DEVICE_ATTR(fts_gesture_buf, S_IRUGO | S_IWUSR,
 static DEVICE_ATTR(fts_gesture_bm, S_IRUGO | S_IWUSR,
                    fts_gesture_bm_show, fts_gesture_bm_store);
 
+static DEVICE_ATTR(fts_gesture_single_tap_pressed, S_IRUGO,
+                   fts_gesture_single_tap_pressed_show, NULL);
+
 static struct attribute *fts_gesture_mode_attrs[] = {
     &dev_attr_fts_gesture_mode.attr,
     &dev_attr_fts_gesture_buf.attr,
     &dev_attr_fts_gesture_bm.attr,
+    &dev_attr_fts_gesture_single_tap_pressed.attr,
     NULL,
 };
 
@@ -278,7 +297,7 @@ void fts_palm_to_sleep_report_key(struct fts_ts_data *ts_data)
     }
 }
 
-static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
+static void fts_gesture_report(struct fts_ts_data *ts_data, struct input_dev *input_dev, int gesture_id)
 {
     int gesture;
 
@@ -325,6 +344,11 @@ static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
         break;
     case  GESTURE_C:
         gesture = KEY_GESTURE_C;
+        break;
+    case GESTURE_SINGLECLICK:
+        ts_data->single_tap_pressed = 1;
+        sysfs_notify(&ts_data->dev->kobj, NULL, "fts_gesture_single_tap_pressed");
+        gesture = -1;
         break;
     default:
         gesture = -1;
@@ -400,7 +424,7 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *touch_buf)
     }
 
     /* report gesture to OS */
-    fts_gesture_report(input_dev, gesture->gesture_id);
+    fts_gesture_report(ts_data, input_dev, gesture->gesture_id);
     return FTS_RETVAL_IGNORE_TOUCHES;
 }
 

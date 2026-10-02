@@ -312,6 +312,7 @@ struct fts_ts_data {
     struct notifier_block fb_notif;
     void *notifier_cookie;
 
+    int single_tap_pressed;
 };
 
 enum _FTS_BUS_TYPE {
