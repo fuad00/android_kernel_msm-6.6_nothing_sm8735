@@ -51,7 +51,6 @@
 #define KEY_GESTURE_V                           KEY_V
 #define KEY_GESTURE_C                           KEY_C
 #define KEY_GESTURE_Z                           KEY_Z
-#define KEY_GESTURE_CLICK                       KEY_WAKEUP
 #define KEY_GESTURE_FOD                         249
 #define KEY_PALM_TO_SLEEP                       252
 
@@ -327,9 +326,6 @@ static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
     case  GESTURE_C:
         gesture = KEY_GESTURE_C;
         break;
-    case GESTURE_SINGLECLICK:
-        gesture = KEY_GESTURE_CLICK;
-        break;
     default:
         gesture = -1;
         break;
@@ -500,7 +496,6 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
     input_set_capability(input_dev, EV_KEY, KEY_GESTURE_V);
     input_set_capability(input_dev, EV_KEY, KEY_GESTURE_Z);
     input_set_capability(input_dev, EV_KEY, KEY_GESTURE_C);
-    input_set_capability(input_dev, EV_KEY, KEY_GESTURE_CLICK);
     input_set_capability(input_dev, EV_KEY, KEY_GESTURE_FOD);
     input_set_capability(input_dev, EV_KEY, KEY_PALM_TO_SLEEP);
 
@@ -518,7 +513,6 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
     __set_bit(KEY_GESTURE_V, input_dev->keybit);
     __set_bit(KEY_GESTURE_C, input_dev->keybit);
     __set_bit(KEY_GESTURE_Z, input_dev->keybit);
-    __set_bit(KEY_GESTURE_CLICK, input_dev->keybit);
     __set_bit(KEY_GESTURE_FOD, input_dev->keybit);
     __set_bit(KEY_PALM_TO_SLEEP, input_dev->keybit);
 
