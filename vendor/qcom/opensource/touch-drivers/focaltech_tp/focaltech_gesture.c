@@ -196,16 +196,17 @@ static ssize_t fts_gesture_bm_store(
 static ssize_t fts_gesture_single_tap_pressed_show(
     struct device *dev, struct device_attribute *attr, char *buf)
 {
-    int single_tap_pressed = 0;
+    int point_x = 0;
+    int point_y = 0;
     struct fts_ts_data *ts_data = dev_get_drvdata(dev);
+    struct fts_gesture_st *gesture = &fts_gesture_data;
 
     mutex_lock(&ts_data->input_dev->mutex);
-    if (ts_data->gesture_support) {
-        single_tap_pressed = ts_data->single_tap_pressed;
-    }
+    point_x = gesture->coordinate_x[0]/16;
+    point_y = gesture->coordinate_y[0]/16;
     mutex_unlock(&ts_data->input_dev->mutex);
 
-    return snprintf(buf, PAGE_SIZE, "%u\n", single_tap_pressed);
+    return sprintf(buf, "%d,%d\n", point_x, point_y);
 }
 
 static ssize_t fts_gesture_fod_pressed_show(
@@ -371,7 +372,6 @@ static void fts_gesture_report(struct fts_ts_data *ts_data, struct input_dev *in
         gesture = KEY_GESTURE_C;
         break;
     case GESTURE_SINGLECLICK:
-        ts_data->single_tap_pressed = 1;
         sysfs_notify(&ts_data->dev->kobj, NULL, "fts_gesture_single_tap_pressed");
         gesture = -1;
         break;
@@ -431,6 +431,7 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *touch_buf)
         }
     }
 
+    mutex_lock(&ts_data->input_dev->mutex);
     /* init variable before read gesture point */
     memset(gesture->coordinate_x, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
     memset(gesture->coordinate_y, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
@@ -447,6 +448,7 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *touch_buf)
         gesture->coordinate_y[i] = (u16)(((buf[2 + index]) << 8)
                                          + buf[3 + index]);
     }
+    mutex_unlock(&ts_data->input_dev->mutex);
 
     /* report gesture to OS */
     fts_gesture_report(ts_data, input_dev, gesture->gesture_id);
